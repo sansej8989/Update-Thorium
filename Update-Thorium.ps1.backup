@@ -1,0 +1,156 @@
+Clear-Host
+
+# --- UI Configuration ---
+$Title = "--- THORIUM ULTIMATE UPDATER ---"
+$Line  = "-" * 50
+
+function Draw-Header {
+    Write-Host "`n$Line" -ForegroundColor Cyan
+    Write-Host "  $Title" -ForegroundColor Cyan
+    Write-Host "$Line`n" -ForegroundColor Cyan
+}
+
+function Show-Spinner {
+    param ([string]$Message)
+    $chars = @('|', '/', '-', '\')
+    Write-Host -NoNewline "[*] $Message " -ForegroundColor Yellow
+    for ($i = 0; $i -lt 12; $i++) {
+        foreach ($char in $chars) {
+            Write-Host -NoNewline "`b$char" -ForegroundColor Yellow
+            Start-Sleep -Milliseconds 50
+        }
+    }
+    Write-Host "`b " 
+}
+
+# --- CPU Architecture & Target Detection ---
+function Get-CpuTarget {
+    $cpuInfo = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
+    $cpuName = $cpuInfo.Name
+    
+    if ($cpuName -match "Ryzen" -or $cpuName -match "i3-|i5-|i7-|i9-") {
+        return @{ Name = "AVX2 (Modern)"; Tag = "AVX2" }
+    } elseif ($cpuName -match "Athlon" -or $cpuName -match "Celeron" -or $cpuName -match "Pentium") {
+        return @{ Name = "SSE4.1 / AVX (Value/Older CPU)"; Tag = "SSE4.1" }
+    } else {
+        return @{ Name = "Windows Default"; Tag = "mini_installer" }
+    }
+}
+
+# --- Main Logic ---
+Draw-Header
+
+# 1. System Analysis
+$cpuInfo = Get-CimInstance Win32_Processor | Select-Object -First 1
+$cpuTarget = Get-CpuTarget
+
+Write-Host "[*] Analyzing your system..." -ForegroundColor Gray
+Write-Host "[+] Your CPU: $($cpuInfo.Name)" -ForegroundColor DarkGray
+Write-Host "[+] Recommended Thorium Build: $($cpuTarget.Name)" -ForegroundColor Yellow
+Write-Host $Line -ForegroundColor Gray
+
+# 2. Find Thorium
+$localPaths = @(
+    "$env:LOCALAPPDATA\Thorium\Application\thorium.exe",
+    "$env:ProgramFiles\Thorium\Application\thorium.exe"
+)
+
+$thoriumPath = $null
+foreach ($path in $localPaths) {
+    if (Test-Path $path) { $thoriumPath = $path; break }
+}
+
+if (-not $thoriumPath) {
+    Write-Host "[X] Local Thorium installation not found!" -ForegroundColor Red
+    Write-Host $Line -ForegroundColor Cyan
+    Read-Host "Press ENTER to exit..."
+    Exit
+}
+
+$localVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($thoriumPath).FileVersion
+Write-Host "[+] Your current version: $localVersion" -ForegroundColor Green
+Write-Host $Line -ForegroundColor Gray
+
+# 3. Check GitHub API
+Show-Spinner "Checking latest version on GitHub..."
+
+try {
+    $repoUrl = "https://api.github.com/repos/Alex313031/thorium/releases/latest"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $release = Invoke-RestMethod -Uri $repoUrl -UseBasicParsing
+    
+    $latestVersionRaw = $release.tag_name
+    $latestVersion = ($latestVersionRaw -replace '[^0-9.]', '').Trim('.')
+    $cleanLocalVersion = ($localVersion -replace '[^0-9.]', '').Trim('.')
+
+    $searchPattern = "*$($cpuTarget.Tag)*.exe"
+    $matchingAsset = $release.assets | Where-Object { $_.name -like $searchPattern -and $_.name -notlike "*mini*" } | Select-Object -First 1
+    
+    if (-not $matchingAsset) {
+        $matchingAsset = $release.assets | Where-Object { $_.name -like "*mini_installer.exe" } | Select-Object -First 1
+    }
+
+    $downloadUrl = $matchingAsset.browser_download_url
+    $fileName = $matchingAsset.name
+
+    Write-Host "`r[+] GitHub latest version: $latestVersionRaw" -ForegroundColor Yellow
+    Write-Host $Line -ForegroundColor Gray
+
+    # 4. Compare Versions
+    if ($cleanLocalVersion -ge $latestVersion) {
+        Write-Host "[OK] You are up to date! No updates needed.`n" -ForegroundColor Green
+        # Граємо короткий приємний звук (Частота 550 Гц, тривалість 250 мс)
+        [Console]::Beep(550, 250)
+    } 
+    else {
+        Write-Host "[!] New update found for your CPU architecture!" -ForegroundColor Cyan
+        Write-Host "Target File: $fileName" -ForegroundColor DarkGray
+        
+        # Подвійний писк-увага, що є оновлення
+        [Console]::Beep(600, 150)
+        [Console]::Beep(800, 200)
+
+        Write-Host ""
+        $choice = Read-Host "[?] Download and install this update? (y/n)"
+        
+        if ($choice -eq 'y' -or $choice -eq 'Y') {
+            
+            # --- Check Running Browser ---
+            $thoriumProcesses = Get-Process -Name "thorium" -ErrorAction SilentlyContinue
+            if ($thoriumProcesses) {
+                Write-Host "`n[!] Thorium is currently running." -ForegroundColor Yellow
+                $closeChoice = Read-Host "[?] Close Thorium automatically to prevent install errors? (y/n)"
+                if ($closeChoice -eq 'y' -or $closeChoice -eq 'Y') {
+                    Write-Host "[*] Closing Thorium..." -ForegroundColor Gray
+                    Stop-Process -Name "thorium" -Force
+                    Start-Sleep -Seconds 2
+                }
+            }
+
+            $targetPath = Join-Path $env:USERPROFILE "Downloads\$fileName"
+            
+            Write-Host "`n[*] Downloading update..." -ForegroundColor Cyan
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $targetPath -UserAgent "Mozilla/5.0"
+            
+            Write-Host "[+] Download complete!" -ForegroundColor Green
+            Write-Host "[*] Launching installer... Follow the window prompts." -ForegroundColor Yellow
+            
+            Start-Process -FilePath $targetPath -Wait
+            Write-Host "`n[+] Finished! Thorium successfully updated." -ForegroundColor Green
+            
+            # Переможний фінальний аккорд
+            [Console]::Beep(523, 150); [Console]::Beep(659, 150); [Console]::Beep(784, 300)
+        } else {
+            Write-Host "`n[-] Update skipped." -ForegroundColor Gray
+        }
+    }
+
+} catch {
+    Write-Host "`r[X] Error connecting to GitHub API or downloading file." -ForegroundColor Red
+    # Помилка — низький звук
+    [Console]::Beep(200, 500)
+}
+
+Write-Host $Line -ForegroundColor Cyan
+Write-Host " Press ENTER to exit..." -ForegroundColor DarkGray
+Read-Host
