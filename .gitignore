@@ -1,0 +1,17 @@
+# Logs
+*.log
+Thorium-Updater.log
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# PowerShell
+*.psm1.bak
