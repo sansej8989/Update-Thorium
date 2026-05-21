@@ -1,8 +1,95 @@
 ﻿Clear-Host
 
+# --- Language Configuration ---
+$systemLanguage = $PSUICulture
+$isUkrainian = $systemLanguage -eq 'uk-UA' -or $systemLanguage -eq 'uk'
+
+# English strings (default)
+$strings = @{
+    Title = "--- THORIUM UPDATER ---"
+    Line = "-" * 50
+    AnalyzingSystem = "[*] Analyzing your system..."
+    YourProcessor = "[+] Your processor: {0}"
+    RecommendedBuild = "[+] Recommended Thorium build: {0}"
+    ThoriumNotFound = "[X] Local Thorium installation not found!"
+    CurrentVersion = "[+] Your current version: {0}"
+    ErrorReadingVersion = "[X] Error reading local version: {0}"
+    CheckingLatestVersion = "Checking latest version on GitHub..."
+    LatestVersionGitHub = "[+] Latest version on GitHub: {0}"
+    InstallerSize = "[+] Installer size: {0} MB"
+    AlreadyUpToDate = "[OK] You have the latest version! No update needed.`n"
+    UpdateAvailable = "[!] Found new update for your CPU architecture!"
+    TargetFile = "Target file: {0}"
+    DownloadAndInstall = "[?] Download and install this update? (y/n)"
+    InsufficientDiskSpace = "[X] Insufficient disk space!"
+    ThoriumRunning = "`n[!] Thorium is currently running."
+    CloseThoriumQuestion = "[?] Close Thorium automatically to prevent installation errors? (y/n)"
+    ClosingThorium = "[*] Closing Thorium..."
+    RemovingOldInstaller = "[*] Removing old installer..."
+    DownloadingUpdate = "`n[*] Downloading update..."
+    DownloadCompleted = "[+] Download completed!"
+    VerifyingIntegrity = "[*] Verifying download integrity..."
+    FileHash = "[+] File hash (SHA256): {0}..."
+    LaunchingInstaller = "[*] Launching installer... Follow instructions in the window."
+    UpdateCompleted = "`n[+] Done! Thorium successfully updated."
+    CleaningInstaller = "[*] Cleaning up installer file..."
+    DownloadError = "`n[X] Download or installation error: {0}"
+    UpdateSkipped = "`n[-] Update skipped."
+    NoWindowsInstallers = "`r[!] Windows installers not found in this release."
+    OnlyLinuxPackages = "[i] This release contains only Linux packages (.deb, .rpm, .zip, .AppImage)"
+    WindowsBuildsAvailable = "[i] Windows builds may be available in another release."
+    AvailableInstallers = "`r[!] Available Windows installers:"
+    NoMatchingInstaller = "No matching installer found for CPU: {0}"
+    GitHubAPIError = "`r[X] GitHub API connection error: {0}"
+    PressEnterToExit = " Press ENTER to exit..."
+    FileNotFound = "Downloaded file not found"
+    FileEmpty = "Downloaded file is empty"
+}
+
+# Ukrainian override
+if ($isUkrainian) {
+    $strings['Title'] = "--- ОНОВЛЮВАЧ THORIUM ---"
+    $strings['AnalyzingSystem'] = "[*] Аналіз вашої системи..."
+    $strings['YourProcessor'] = "[+] Ваш процесор: {0}"
+    $strings['RecommendedBuild'] = "[+] Рекомендована збірка Thorium: {0}"
+    $strings['ThoriumNotFound'] = "[X] Локальну інсталяцію Thorium не знайдено!"
+    $strings['CurrentVersion'] = "[+] Ваша поточна версія: {0}"
+    $strings['ErrorReadingVersion'] = "[X] Помилка читання локальної версії: {0}"
+    $strings['CheckingLatestVersion'] = "Перевірка останньої версії на GitHub..."
+    $strings['LatestVersionGitHub'] = "[+] Остання версія на GitHub: {0}"
+    $strings['InstallerSize'] = "[+] Розмір інсталятора: {0} МБ"
+    $strings['AlreadyUpToDate'] = "[OK] У вас встановлена остання версія! Оновлення не потрібне.`n"
+    $strings['UpdateAvailable'] = "[!] Знайдено нове оновлення для вашої архітектури процесора!"
+    $strings['TargetFile'] = "Цільовий файл: {0}"
+    $strings['DownloadAndInstall'] = "[?] Завантажити та встановити це оновлення? (y/n)"
+    $strings['InsufficientDiskSpace'] = "[X] Недостатньо місця на диску!"
+    $strings['ThoriumRunning'] = "`n[!] Thorium зараз запущений."
+    $strings['CloseThoriumQuestion'] = "[?] Закрити Thorium автоматично для запобігання помилок встановлення? (y/n)"
+    $strings['ClosingThorium'] = "[*] Закриття Thorium..."
+    $strings['RemovingOldInstaller'] = "[*] Видалення старого інсталятора..."
+    $strings['DownloadingUpdate'] = "`n[*] Завантаження оновлення..."
+    $strings['DownloadCompleted'] = "[+] Завантаження завершено!"
+    $strings['VerifyingIntegrity'] = "[*] Перевірка цілісності завантаження..."
+    $strings['FileHash'] = "[+] Хеш файлу (SHA256): {0}..."
+    $strings['LaunchingInstaller'] = "[*] Запуск інсталятора... Слідуйте інструкціям у вікні."
+    $strings['UpdateCompleted'] = "`n[+] Готово! Thorium успішно оновлено."
+    $strings['CleaningInstaller'] = "[*] Очищення файлу інсталятора..."
+    $strings['DownloadError'] = "`n[X] Помилка завантаження або встановлення: {0}"
+    $strings['UpdateSkipped'] = "`n[-] Оновлення пропущено."
+    $strings['NoWindowsInstallers'] = "`r[!] Windows інсталятори не знайдено в цьому релізі."
+    $strings['OnlyLinuxPackages'] = "[i] Цей реліз містить тільки Linux пакети (.deb, .rpm, .zip, .AppImage)"
+    $strings['WindowsBuildsAvailable'] = "[i] Windows збірки можуть бути доступні в іншому релізі."
+    $strings['AvailableInstallers'] = "`r[!] Доступні Windows інсталятори:"
+    $strings['NoMatchingInstaller'] = "Не знайдено підходящого інсталятора для вашої архітектури процесора ({0})"
+    $strings['GitHubAPIError'] = "`r[X] Помилка підключення до GitHub API: {0}"
+    $strings['PressEnterToExit'] = " Натисніть ENTER для виходу..."
+    $strings['FileNotFound'] = "Завантажений файл не знайдено"
+    $strings['FileEmpty'] = "Завантажений файл порожній"
+}
+
 # --- UI Configuration ---
-$Title = "--- ОНОВЛЮВАЧ THORIUM ---"
-$Line  = "-" * 50
+$Title = $strings['Title']
+$Line = $strings['Line']
 
 function Show-Header {
     Write-Host "`n$Line" -ForegroundColor Cyan
@@ -116,9 +203,9 @@ Write-Log "=== Thorium Updater Started ===" -Level Info
 # 1. System Analysis
 $cpuTarget = Get-CpuTarget
 
-Write-Host "[*] Аналіз вашої системи..." -ForegroundColor Gray
-Write-Host "[+] Ваш процесор: $($cpuTarget.CpuName)" -ForegroundColor DarkGray
-Write-Host "[+] Рекомендована збірка Thorium: $($cpuTarget.Name)" -ForegroundColor Yellow
+Write-Host ($strings['AnalyzingSystem']) -ForegroundColor Gray
+Write-Host ($strings['YourProcessor'] -f $cpuTarget.CpuName) -ForegroundColor DarkGray
+Write-Host ($strings['RecommendedBuild'] -f $cpuTarget.Name) -ForegroundColor Yellow
 Write-Host $Line -ForegroundColor Gray
 
 # 2. Find Thorium
@@ -137,28 +224,28 @@ foreach ($path in $localPaths) {
 }
 
 if (-not $thoriumPath) {
-    Write-Host "[X] Локальну інсталяцію Thorium не знайдено!" -ForegroundColor Red
+    Write-Host ($strings['ThoriumNotFound']) -ForegroundColor Red
     Write-Log "Thorium installation not found" -Level Error
     Write-Host $Line -ForegroundColor Cyan
-    Read-Host "Натисніть ENTER для виходу..."
+    Read-Host ($strings['PressEnterToExit'])
     Exit
 }
 
 try {
     $localVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($thoriumPath).FileVersion
-    Write-Host "[+] Ваша поточна версія: $localVersion" -ForegroundColor Green
+    Write-Host ($strings['CurrentVersion'] -f $localVersion) -ForegroundColor Green
     Write-Log "Current version: $localVersion" -Level Info
 } catch {
-    Write-Host "[X] Помилка читання локальної версії: $_" -ForegroundColor Red
+    Write-Host ($strings['ErrorReadingVersion'] -f $_) -ForegroundColor Red
     Write-Log "Error reading local version: $_" -Level Error
-    Read-Host "Натисніть ENTER для виходу..."
+    Read-Host ($strings['PressEnterToExit'])
     Exit
 }
 
 Write-Host $Line -ForegroundColor Gray
 
 # 3. Check GitHub API
-Show-Spinner "Перевірка останньої версії на GitHub..."
+Show-Spinner ($strings['CheckingLatestVersion'])
 
 try {
     $repoUrl = "https://api.github.com/repos/Alex313031/thorium/releases/latest"
@@ -189,18 +276,18 @@ try {
     
     if (-not $matchingAsset) {
         if (-not $windowsInstallers -or $windowsInstallers.Count -eq 0) {
-            Write-Host "`r[!] Windows інсталятори не знайдено в цьому релізі." -ForegroundColor Yellow
-            Write-Host "[i] Цей реліз містить тільки Linux пакети (.deb, .rpm, .zip, .AppImage)" -ForegroundColor Gray
-            Write-Host "[i] Windows збірки можуть бути доступні в іншому релізі." -ForegroundColor Gray
+            Write-Host ($strings['NoWindowsInstallers']) -ForegroundColor Yellow
+            Write-Host ($strings['OnlyLinuxPackages']) -ForegroundColor Gray
+            Write-Host ($strings['WindowsBuildsAvailable']) -ForegroundColor Gray
             Write-Log "No Windows installers in release $latestVersionRaw" -Level Warning
             throw "No Windows installers available in the latest release"
         } else {
-            Write-Host "`r[!] Доступні Windows інсталятори:" -ForegroundColor Yellow
+            Write-Host ($strings['AvailableInstallers']) -ForegroundColor Yellow
             $windowsInstallers | ForEach-Object { 
                 Write-Host "    - $($_.name)" -ForegroundColor Gray 
             }
             Write-Log "No matching installer for CPU: $($cpuTarget.Tag)" -Level Warning
-            throw "Не знайдено підходящого інсталятора для вашої архітектури процесора ($($cpuTarget.Tag))"
+            throw ($strings['NoMatchingInstaller'] -f $cpuTarget.Tag)
         }
     }
 
@@ -208,28 +295,28 @@ try {
     $fileName = $matchingAsset.name
     $fileSize = [math]::Round($matchingAsset.size / 1MB, 2)
 
-    Write-Host "`r[+] Остання версія на GitHub: $latestVersionRaw" -ForegroundColor Yellow
-    Write-Host "[+] Розмір інсталятора: $fileSize МБ" -ForegroundColor DarkGray
+    Write-Host "`r$($strings['LatestVersionGitHub'] -f $latestVersionRaw)" -ForegroundColor Yellow
+    Write-Host ($strings['InstallerSize'] -f $fileSize) -ForegroundColor DarkGray
     Write-Host $Line -ForegroundColor Gray
 
     # 4. Compare Versions (Fixed)
     $versionComparison = Compare-Versions -Version1 $cleanLocalVersion -Version2 $latestVersion
     
     if ($versionComparison -ge 0) {
-        Write-Host "[OK] У вас встановлена остання версія! Оновлення не потрібне.`n" -ForegroundColor Green
+        Write-Host ($strings['AlreadyUpToDate']) -ForegroundColor Green
         Write-Log "Already up to date" -Level Success
         [Console]::Beep(550, 250)
     } 
     else {
-        Write-Host "[!] Знайдено нове оновлення для вашої архітектури процесора!" -ForegroundColor Cyan
-        Write-Host "Цільовий файл: $fileName" -ForegroundColor DarkGray
+        Write-Host ($strings['UpdateAvailable']) -ForegroundColor Cyan
+        Write-Host ($strings['TargetFile'] -f $fileName) -ForegroundColor DarkGray
         Write-Log "Update available: $latestVersionRaw" -Level Info
         
         [Console]::Beep(600, 150)
         [Console]::Beep(800, 200)
 
         Write-Host ""
-        $choice = Read-Host "[?] Завантажити та встановити це оновлення? (y/n)"
+        $choice = Read-Host ($strings['DownloadAndInstall'])
         
         if ($choice -eq 'y' -or $choice -eq 'Y') {
             
@@ -238,19 +325,19 @@ try {
             $downloadPath = Join-Path $env:USERPROFILE "Downloads"
             
             if (-not (Test-DiskSpace -Path $downloadPath -RequiredBytes $requiredSpace)) {
-                Write-Host "[X] Недостатньо місця на диску!" -ForegroundColor Red
+                Write-Host ($strings['InsufficientDiskSpace']) -ForegroundColor Red
                 Write-Log "Insufficient disk space" -Level Error
-                Read-Host "Натисніть ENTER для виходу..."
+                Read-Host ($strings['PressEnterToExit'])
                 Exit
             }
 
             # Check Running Browser
             $thoriumProcesses = Get-Process -Name "thorium" -ErrorAction SilentlyContinue
             if ($thoriumProcesses) {
-                Write-Host "`n[!] Thorium зараз запущений." -ForegroundColor Yellow
-                $closeChoice = Read-Host "[?] Закрити Thorium автоматично для запобігання помилок встановлення? (y/n)"
+                Write-Host ($strings['ThoriumRunning']) -ForegroundColor Yellow
+                $closeChoice = Read-Host ($strings['CloseThoriumQuestion'])
                 if ($closeChoice -eq 'y' -or $closeChoice -eq 'Y') {
-                    Write-Host "[*] Закриття Thorium..." -ForegroundColor Gray
+                    Write-Host ($strings['ClosingThorium']) -ForegroundColor Gray
                     Write-Log "Closing Thorium processes" -Level Info
                     Stop-Process -Name "thorium" -Force
                     Start-Sleep -Seconds 2
@@ -261,11 +348,11 @@ try {
             
             # Remove old installer if exists
             if (Test-Path $targetPath) {
-                Write-Host "[*] Видалення старого інсталятора..." -ForegroundColor Gray
+                Write-Host ($strings['RemovingOldInstaller']) -ForegroundColor Gray
                 Remove-Item -Path $targetPath -Force -ErrorAction SilentlyContinue
             }
 
-            Write-Host "`n[*] Завантаження оновлення..." -ForegroundColor Cyan
+            Write-Host ($strings['DownloadingUpdate']) -ForegroundColor Cyan
             Write-Log "Starting download: $downloadUrl" -Level Info
             
             try {
@@ -274,44 +361,44 @@ try {
                 Invoke-WebRequest -Uri $downloadUrl -OutFile $targetPath -UserAgent "Mozilla/5.0" -ErrorAction Stop
                 $ProgressPreference = 'Continue'
                 
-                Write-Host "[+] Завантаження завершено!" -ForegroundColor Green
+                Write-Host ($strings['DownloadCompleted']) -ForegroundColor Green
                 Write-Log "Download completed: $targetPath" -Level Success
                 
                 # Verify file exists and has content
                 if (-not (Test-Path $targetPath)) {
-                    throw "Завантажений файл не знайдено"
+                    throw ($strings['FileNotFound'])
                 }
                 
                 $downloadedSize = (Get-Item $targetPath).Length
                 if ($downloadedSize -eq 0) {
-                    throw "Завантажений файл порожній"
+                    throw ($strings['FileEmpty'])
                 }
                 
-                Write-Host "[*] Перевірка цілісності завантаження..." -ForegroundColor Gray
+                Write-Host ($strings['VerifyingIntegrity']) -ForegroundColor Gray
                 $fileHash = Get-FileHashSafe -FilePath $targetPath
                 if ($fileHash) {
-                    Write-Host "[+] Хеш файлу (SHA256): $($fileHash.Substring(0, 16))..." -ForegroundColor DarkGray
+                    Write-Host ($strings['FileHash'] -f $fileHash.Substring(0, 16)) -ForegroundColor DarkGray
                     Write-Log "File hash: $fileHash" -Level Info
                 }
                 
-                Write-Host "[*] Запуск інсталятора... Слідуйте інструкціям у вікні." -ForegroundColor Yellow
+                Write-Host ($strings['LaunchingInstaller']) -ForegroundColor Yellow
                 Write-Log "Launching installer" -Level Info
                 
                 Start-Process -FilePath $targetPath -Wait
                 
-                Write-Host "`n[+] Готово! Thorium успішно оновлено." -ForegroundColor Green
+                Write-Host ($strings['UpdateCompleted']) -ForegroundColor Green
                 Write-Log "Installation completed successfully" -Level Success
                 
                 # Victory sound
                 [Console]::Beep(523, 150); [Console]::Beep(659, 150); [Console]::Beep(784, 300)
                 
                 # Optional: Clean up installer
-                Write-Host "[*] Очищення файлу інсталятора..." -ForegroundColor Gray
+                Write-Host ($strings['CleaningInstaller']) -ForegroundColor Gray
                 Start-Sleep -Seconds 1
                 Remove-Item -Path $targetPath -Force -ErrorAction SilentlyContinue
                 
             } catch {
-                Write-Host "`n[X] Помилка завантаження або встановлення: $_" -ForegroundColor Red
+                Write-Host ($strings['DownloadError'] -f $_) -ForegroundColor Red
                 Write-Log "Download/installation error: $_" -Level Error
                 [Console]::Beep(200, 500)
                 
@@ -321,18 +408,18 @@ try {
                 }
             }
         } else {
-            Write-Host "`n[-] Оновлення пропущено." -ForegroundColor Gray
+            Write-Host ($strings['UpdateSkipped']) -ForegroundColor Gray
             Write-Log "Update skipped by user" -Level Info
         }
     }
 
 } catch {
-    Write-Host "`r[X] Помилка підключення до GitHub API: $_" -ForegroundColor Red
+    Write-Host ($strings['GitHubAPIError'] -f $_) -ForegroundColor Red
     Write-Log "GitHub API error: $_" -Level Error
     [Console]::Beep(200, 500)
 }
 
 Write-Host $Line -ForegroundColor Cyan
-Write-Host " Натисніть ENTER для виходу..." -ForegroundColor DarkGray
+Write-Host ($strings['PressEnterToExit']) -ForegroundColor DarkGray
 Write-Log "=== Thorium Updater Finished ===" -Level Info
 Read-Host
