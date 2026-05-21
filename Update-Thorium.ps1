@@ -125,6 +125,72 @@ function Write-Log {
     Add-Content -Path $logFile -Value $logEntry -ErrorAction SilentlyContinue
 }
 
+function Test-Administrator {
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    
+    if (-not $isAdmin) {
+        $adminMsg = if ($isUkrainian) { "Цей скрипт вимагає прав адміністратора для встановлення оновлень." } else { "This script requires administrator rights to install updates." }
+        $restartMsg = if ($isUkrainian) { "Перезапустити скрипт з правами адміністратора? (y/n)" } else { "Restart script with administrator rights? (y/n)" }
+        
+        Write-Host "`n[!] $adminMsg" -ForegroundColor Yellow
+        Write-Log "Script running without administrator rights" -Level Warning
+        
+        $choice = Read-Host $restartMsg
+        if ($choice -eq 'y' -or $choice -eq 'Y') {
+            Write-Log "Restarting script with administrator rights" -Level Info
+            Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+            Exit
+        } else {
+            $skipMsg = if ($isUkrainian) { "Скрипт буде продовжувати без прав адміністратора. Деякі операції можуть не спрацювати." } else { "Script will continue without administrator rights. Some operations may fail." }
+            Write-Host "[i] $skipMsg" -ForegroundColor Gray
+            Write-Log "User chose to continue without administrator rights" -Level Warning
+        }
+    }
+}
+
+function Invoke-DownloadWithProgress {
+    param (
+        [string]$Url,
+        [string]$OutputPath
+    )
+    
+    try {
+        $webClient = New-Object System.Net.WebClient
+        $downloadStartTime = Get-Date
+        
+        $progressAction = {
+            $sender = $args[0]
+            $e = $args[1]
+            $percent = [math]::Round(($e.BytesReceived / $e.TotalBytesToReceive) * 100)
+            $elapsed = (Get-Date) - $downloadStartTime
+            
+            if ($e.TotalBytesToReceive -gt 0) {
+                $speed = $e.BytesReceived / $elapsed.TotalSeconds / 1MB
+                $remaining = ($e.TotalBytesToReceive - $e.BytesReceived) / ($speed * 1MB)
+                $remainingTime = [timespan]::FromSeconds($remaining)
+                
+                $progressBar = "[" + ("=" * ($percent / 5)).PadRight(20) + "] $percent%"
+                $sizeInfo = "$([math]::Round($e.BytesReceived / 1MB, 1))MB / $([math]::Round($e.TotalBytesToReceive / 1MB, 1))MB"
+                $speedInfo = "$([math]::Round($speed, 2))MB/s"
+                $timeInfo = "ETA: $($remainingTime.Minutes)m $($remainingTime.Seconds)s"
+                
+                Write-Host -NoNewline "`r[*] $progressBar | $sizeInfo | $speedInfo | $timeInfo" -ForegroundColor Cyan
+            }
+        }
+        
+        $webClient.add_DownloadProgressChanged($progressAction)
+        $webClient.DownloadFile($Url, $OutputPath)
+        Write-Host "`r[+] Download completed!                                                                    " -ForegroundColor Green
+        Write-Log "Download completed: $OutputPath" -Level Success
+        
+    } catch {
+        Write-Log "Download error: $_" -Level Error
+        throw $_
+    } finally {
+        $webClient.Dispose()
+    }
+}
+
 # --- CPU Architecture & Target Detection ---
 function Get-CpuTarget {
     try {
@@ -199,6 +265,9 @@ function Get-FileHashSafe {
 # --- Main Logic ---
 Show-Header
 Write-Log "=== Thorium Updater Started ===" -Level Info
+
+# Check administrator rights
+Test-Administrator
 
 # 1. System Analysis
 $cpuTarget = Get-CpuTarget
@@ -356,13 +425,8 @@ try {
             Write-Log "Starting download: $downloadUrl" -Level Info
             
             try {
-                # Download with progress
-                $ProgressPreference = 'SilentlyContinue'
-                Invoke-WebRequest -Uri $downloadUrl -OutFile $targetPath -UserAgent "Mozilla/5.0" -ErrorAction Stop
-                $ProgressPreference = 'Continue'
-                
-                Write-Host ($strings['DownloadCompleted']) -ForegroundColor Green
-                Write-Log "Download completed: $targetPath" -Level Success
+                # Download with progress bar
+                Invoke-DownloadWithProgress -Url $downloadUrl -OutputPath $targetPath
                 
                 # Verify file exists and has content
                 if (-not (Test-Path $targetPath)) {

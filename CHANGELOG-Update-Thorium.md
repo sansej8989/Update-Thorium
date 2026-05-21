@@ -4,7 +4,47 @@
 
 ---
 
-## 🌐 NEW: Multilingual Support / НОВЕ: Мультимовна підтримка
+## 🆕 LATEST: Additional Improvements / ОСТАННЄ: Додаткові покращення
+
+### English
+**1. Administrator Rights Check**
+- Automatic detection of administrator privileges at script startup
+- Option to restart script with elevated rights
+- User can choose to continue without admin rights (with warning)
+- Prevents installation errors due to insufficient permissions
+
+**2. Download Progress Bar**
+- Real-time progress visualization during file download
+- Shows: progress bar, downloaded/total size, download speed, estimated time
+- Uses `System.Net.WebClient` with `DownloadProgressChanged` event
+- More informative than simple spinner animation
+
+**Implementation:**
+- `Test-Administrator` function checks privileges and offers restart
+- `Invoke-DownloadWithProgress` function replaces `Invoke-WebRequest`
+- Both functions support multilingual interface
+
+### Українська
+**1. Перевірка прав адміністратора**
+- Автоматичне визначення прав адміністратора при запуску скрипту
+- Можливість перезапустити скрипт з підвищеними правами
+- Користувач може продовжити без прав адміна (з попередженням)
+- Запобігає помилкам встановлення через недостатні права
+
+**2. Прогрес-бар завантаження**
+- Візуалізація прогресу в реальному часі під час завантаження файлу
+- Показує: прогрес-бар, завантажено/загалом, швидкість, час до завершення
+- Використовує `System.Net.WebClient` з подією `DownloadProgressChanged`
+- Більш інформативно ніж проста анімація спінера
+
+**Реалізація:**
+- Функція `Test-Administrator` перевіряє права та пропонує перезапуск
+- Функція `Invoke-DownloadWithProgress` замінює `Invoke-WebRequest`
+- Обидві функції підтримують мультимовний інтерфейс
+
+---
+
+## 🌐 Multilingual Support / Мультимовна підтримка
 
 ### English
 **Automatic Language Detection**
