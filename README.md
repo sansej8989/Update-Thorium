@@ -9,10 +9,11 @@
 ## ✨ Features
 
 - 🔍 **Auto-detect CPU architecture** — selects optimal build (AVX2, SSE4.1, or default)
-- 📊 **Version comparison** — correct numeric comparison via `System.Version`
-- 📥 **Download progress bar** — real-time speed, ETA, and percentage display
+- 📊 **Robust version comparison** — handles complex tags (e.g., 'M150') via advanced parsing
+- 🌐 **Dual-repository search** — checks both Official and Collaborator (Beta) repos for the absolute latest Windows binaries
+- 📥 **Reliable downloads** — real-time progress bar with built-in timeouts to prevent hangs
 - 🛡️ **Administrator rights check** — auto-restart with elevated privileges
-- 🌐 **Multilingual** — Ukrainian for `uk-UA` systems, English for all others
+- 🌍 **Automatic Multilingual support** — auto-detects system language (Ukrainian/English)
 - 📝 **Logging** — all operations logged to `%TEMP%\Thorium-Updater.log`
 - ✅ **File integrity** — SHA256 hash verification after download
 - 💾 **Disk space check** — warns before download if insufficient space
@@ -45,9 +46,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 1. **Detects** your CPU type and selects the best Thorium build
 2. **Finds** your installed Thorium version
-3. **Checks** GitHub for the latest release
+3. **Checks** multiple GitHub repositories for the latest Windows release
 4. **Compares** versions — if update available, offers to download
-5. **Downloads** with real-time progress bar
+5. **Downloads** with real-time progress bar and stability timeouts
 6. **Verifies** file integrity (SHA256)
 7. **Launches** installer and cleans up after
 
@@ -68,8 +69,8 @@ The script auto-detects everything. No configuration needed.
 **CPU detection logic:**
 | CPU Type | Build Selected |
 |----------|---------------|
-| Intel Core i3/i5/i7/i9, AMD Ryzen | AVX2 (Modern) |
-| Intel Celeron/Pentium, AMD Athlon | SSE4.1 / AVX |
+| Intel Core i3/i5/i7/i9, AMD Ryzen, AMD Athlon Silver/Gold | AVX2 (Modern) |
+| Intel Celeron/Pentium, AMD Athlon (Older) | SSE4.1 / AVX |
 | Other | Default (mini_installer) |
 
 ## 📝 Logs
@@ -99,10 +100,11 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## ✨ Можливості
 
 - 🔍 **Автовизначення архітектури CPU** — обирає оптимальну збірку (AVX2, SSE4.1 або стандартну)
-- 📊 **Порівняння версій** — коректне числове порівняння через `System.Version`
-- 📥 **Прогрес-бар завантаження** — швидкість, час до завершення, відсотки в реальному часі
+- 📊 **Надійне порівняння версій** — обробка складних тегів (напр. 'M150') через розширений парсинг
+- 🌐 **Пошук по двох репозиторіях** — перевіряє як офіційний, так і бета-репозиторій для пошуку найновіших збірок Windows
+- 📥 **Стабільне завантаження** — прогрес-бар у реальному часі з тайм-аутами для запобігання зависань
 - 🛡️ **Перевірка прав адміністратора** — автоматичний перезапуск з підвищеними правами
-- 🌐 **Мультимовність** — українська для `uk-UA` систем, англійська для всіх інших
+- 🌍 **Автоматична багатомовність** — автоматичне визначення мови системи (українська/англійська)
 - 📝 **Логування** — всі операції логуються в `%TEMP%\Thorium-Updater.log`
 - ✅ **Цілісність файлів** — перевірка SHA256 хешу після завантаження
 - 💾 **Перевірка вільного місця** — попередження перед завантаженням
@@ -135,9 +137,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 1. **Визначає** тип процесора та обирає найкращу збірку Thorium
 2. **Знаходить** встановлену версію Thorium
-3. **Перевіряє** GitHub на наявність нових релізів
+3. **Перевіряє** кілька репозиторіїв GitHub на наявність останнього релізу для Windows
 4. **Порівнює** версії — якщо є оновлення, пропонує завантажити
-5. **Завантажує** з прогрес-баром в реальному часі
+5. **Завантажує** з прогрес-баром та тайм-аутами стабільності
 6. **Перевіряє** цілісність файлу (SHA256)
 7. **Запускає** інсталятор та прибирає після завершення
 
