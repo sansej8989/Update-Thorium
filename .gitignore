@@ -5,7 +5,7 @@ Thorium-Updater.log
 # Temporary files
 *.tmp
 *.temp
-~$*
+~*$
 
 # OS generated files
 Thumbs.db
@@ -15,3 +15,12 @@ $RECYCLE.BIN/
 
 # PowerShell
 *.psm1.bak
+
+# Backups
+*.backup
+*.bak
+
+# IDEs & Agents
+.vscode/
+.kilo/
+.kilocode/

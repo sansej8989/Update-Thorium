@@ -11,7 +11,9 @@
 - 🔍 **Auto-detect CPU architecture** — selects optimal build (AVX2, SSE4.1, or default)
 - 📊 **Robust version comparison** — handles complex tags (e.g., 'M150') via advanced parsing
 - 🌐 **Dual-repository search** — checks both Official and Collaborator (Beta) repos for the absolute latest Windows binaries
-- 📥 **Reliable downloads** — real-time progress bar with built-in timeouts to prevent hangs
+- 📥 **Reliable downloads** — stable downloads with built-in timeouts to prevent hangs
+- 🔄 **API retry** — 3 attempts with exponential backoff for GitHub API requests
+- 🛡️ **Signature verification** — checks Authenticode digital signature before installation
 - 🛡️ **Administrator rights check** — auto-restart with elevated privileges
 - 🌍 **Automatic Multilingual support** — auto-detects system language (Ukrainian/English)
 - 📝 **Logging** — all operations logged to `%TEMP%\Thorium-Updater.log`
@@ -48,17 +50,21 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 2. **Finds** your installed Thorium version
 3. **Checks** multiple GitHub repositories for the latest Windows release
 4. **Compares** versions — if update available, offers to download
-5. **Downloads** with real-time progress bar and stability timeouts
-6. **Verifies** file integrity (SHA256)
+5. **Downloads** with stability timeouts
+6. **Verifies** file integrity (SHA256) and digital signature
 7. **Launches** installer and cleans up after
 
 ## 📁 Project Structure
 
 ```
 Update-Thorium/
+├── .github/
+│   └── workflows/
+│       └── powershell-ci.yml    # CI/CD pipeline
+├── tests/
+│   └── Update-Thorium.Tests.ps1 # Pester test suite
 ├── README.md                    # This file
 ├── Update-Thorium.ps1           # Main updater script
-├── Update-Thorium.ps1.backup    # Original script backup
 └── CHANGELOG-Update-Thorium.md  # Detailed change log
 ```
 
@@ -86,6 +92,38 @@ Log levels: `Info`, `Warning`, `Error`, `Success`
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## 🧪 Testing & Quality Assurance
+
+This project uses **Pester v5+** for automated testing and **GitHub Actions** for continuous integration.
+
+### Running Tests Locally
+
+```powershell
+# Install Pester (if not already installed)
+Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
+
+# Run all tests
+Invoke-Pester -Path ./tests/Update-Thorium.Tests.ps1
+```
+
+### CI/CD Pipeline
+
+Automated tests run on every `push` and `pull_request` to `main`/`master` via GitHub Actions:
+- **Syntax check** — validates all `.ps1` files using PowerShell AST parser
+- **Pester tests** — runs the full test suite covering `Compare-Versions`, `Get-CpuTarget`, `Test-DiskSpace`, `Invoke-RestMethodWithRetry`, `Test-FileSignature`
+
+### Test Coverage
+
+| Function | Tests | Cases |
+|---|---|---|
+| `Compare-Versions` | 16 | Standard, letter prefixes (M150), v-prefix, equal, complex tags, edge cases |
+| `Get-CpuTarget` | 8 | Intel i7/i9, AMD Ryzen, Celeron, Pentium, Athlon, unknown, error |
+| `Test-DiskSpace` | 4 | Enough space, insufficient, exact boundary, error handling |
+| `Invoke-RestMethodWithRetry` | 7 | Success, retry, exhaustion, attempt count, backoff timing |
+| `Test-FileSignature` | 4 | Valid, NotSigned, UnknownError, exception |
+
+---
 
 ## 📄 License
 

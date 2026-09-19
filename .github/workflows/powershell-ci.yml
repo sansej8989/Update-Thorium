@@ -1,0 +1,44 @@
+name: PowerShell CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check PowerShell syntax
+        run: |
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Filter "*.ps1" -Recurse | ForEach-Object {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              Write-Output "FAIL: $($_.FullName)"
+              foreach ($e in $errors) {
+                Write-Output "  ERROR: $($e.Message)"
+              }
+              $exitCode = 1
+            } else {
+              Write-Output "OK: $($_.FullName)"
+            }
+          }
+          if ($exitCode) { exit $exitCode }
+
+      - name: Install Pester
+        run: Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
+
+      - name: Run Pester tests
+        run: |
+          $result = Invoke-Pester -Path ./tests/Update-Thorium.Tests.ps1 -Passthru -Output Detailed
+          Write-Output "Passed: $($result.PassedCount)"
+          Write-Output "Failed: $($result.FailedCount)"
+          Write-Output "Total: $($result.TotalCount)"
+          if ($result.FailedCount -gt 0) {
+            exit 1
+          }

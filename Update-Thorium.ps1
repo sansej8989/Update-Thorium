@@ -1,4 +1,4 @@
-﻿Clear-Host
+﻿# Clear-Host  # Disabled: preserves error context on early failures
 
 # --- Language Configuration ---
 
@@ -47,6 +47,13 @@ $englishStrings = @{
     AdminRequired = "This script requires administrator rights to install updates."
     RestartWithAdmin = "Restart script with administrator rights? (y/n)"
     ContinueWithoutAdmin = "Script will continue without administrator rights. Some operations may fail."
+    InstallerFailed = "Installer exited with error code: {0}"
+    ApiAttemptFailed = "Attempt {0}/{1} failed: {2}"
+    ApiRetrying = "Retrying in {0} seconds..."
+    SignatureValid = "[+] Digital signature status: Valid"
+    SignatureMissing = "[!] Digital signature is missing or unverified!"
+    SignatureVerify = "Continue without verified signature? (y/n)"
+    VerifyingSignature = "[*] Verifying digital signature..."
 }
 
 # Ukrainian strings
@@ -94,6 +101,13 @@ $ukrainianStrings = @{
     AdminRequired = "Цей скрипт вимагає прав адміністратора для встановлення оновлень."
     RestartWithAdmin = "Перезапустити скрипт з правами адміністратора? (т/н)"
     ContinueWithoutAdmin = "Скрипт продовжить роботу без прав адміністратора. Деякі операції можуть завершитися невдачею."
+    InstallerFailed = "Інсталятор завершився з помилкою (код: {0})"
+    ApiAttemptFailed = "Спроба {0}/{1} не вдалася: {2}"
+    ApiRetrying = "Повтор через {0} секунд..."
+    SignatureValid = "[+] Статус цифрового підпису: Дійсний"
+    SignatureMissing = "[!] Цифровий підпис відсутній або неперевірений!"
+    SignatureVerify = "Продовжити без перевіреного підпису? (т/н)"
+    VerifyingSignature = "[*] Перевірка цифрового підпису..."
 }
 
 # Determine UI language
@@ -112,20 +126,6 @@ function Show-Header {
     Write-Host "`n$Line" -ForegroundColor Cyan
     Write-Host "  $Title" -ForegroundColor Cyan
     Write-Host "$Line`n" -ForegroundColor Cyan
-}
-
-function Show-Spinner {
-    param ([string]$Message)
-    $spinnerChars = @('|', '/', '-', '\')
-    $iterations = 12
-    Write-Host -NoNewline "[*] $Message " -ForegroundColor Yellow
-    for ($i = 0; $i -lt $iterations; $i++) {
-        foreach ($char in $spinnerChars) {
-            Write-Host -NoNewline "`b$char" -ForegroundColor Yellow
-            Start-Sleep -Milliseconds 50
-        }
-    }
-    Write-Host "`b " 
 }
 
 function Write-Log {
@@ -215,13 +215,20 @@ function Get-CpuTarget {
 
 function Compare-Versions {
     param ([string]$Version1, [string]$Version2)
-    try {
-        $v1 = [System.Version]::Parse($Version1)
-        $v2 = [System.Version]::Parse($Version2)
-        return $v1.CompareTo($v2)
-    } catch {
+    $v1Parts = [regex]::Matches($Version1, '\d+') | ForEach-Object { [int]$_.Value }
+    $v2Parts = [regex]::Matches($Version2, '\d+') | ForEach-Object { [int]$_.Value }
+    if ($v1Parts.Count -eq 0 -or $v2Parts.Count -eq 0) {
         return [string]::Compare($Version1, $Version2)
     }
+    $maxLength = [Math]::Max($v1Parts.Count, $v2Parts.Count)
+    for ($i = 0; $i -lt $maxLength; $i++) {
+        $v1 = if ($i -lt $v1Parts.Count) { $v1Parts[$i] } else { 0 }
+        $v2 = if ($i -lt $v2Parts.Count) { $v2Parts[$i] } else { 0 }
+        if ($v1 -ne $v2) {
+            return $v1.CompareTo($v2)
+        }
+    }
+    return 0
 }
 
 function Test-DiskSpace {
@@ -238,6 +245,54 @@ function Get-FileHashSafe {
     try {
         return (Get-FileHash -Path $FilePath -Algorithm $Algorithm -ErrorAction Stop).Hash
     } catch { return $null }
+}
+
+function Invoke-RestMethodWithRetry {
+    param (
+        [string]$Uri,
+        [int]$MaxRetries = 3
+    )
+    for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
+        try {
+            Write-Log "API request attempt $attempt/$MaxRetries to $Uri" -Level Info
+            return Invoke-RestMethod -Uri $Uri -UseBasicParsing -ErrorAction Stop
+        } catch {
+            $errorMsg = $_.Exception.Message
+            Write-Log "API attempt $attempt/$MaxRetries failed: $errorMsg" -Level Warning
+            Write-Host "[!] " -NoNewline -ForegroundColor DarkYellow
+            Write-Host ($strings['ApiAttemptFailed'] -f $attempt, $MaxRetries, $errorMsg) -ForegroundColor DarkYellow
+            if ($attempt -lt $MaxRetries) {
+                $delay = [Math]::Pow(2, $attempt)
+                Write-Host "[*] " -NoNewline -ForegroundColor Gray
+                Write-Host ($strings['ApiRetrying'] -f $delay) -ForegroundColor Gray
+                Start-Sleep -Seconds $delay
+            }
+        }
+    }
+    throw "API request failed after $MaxRetries attempts"
+}
+
+function Test-FileSignature {
+    param ([string]$FilePath)
+    try {
+        $signature = Get-AuthenticodeSignature -FilePath $FilePath -ErrorAction Stop
+        if ($signature.Status -eq 'Valid') {
+            Write-Host "[+] " -NoNewline -ForegroundColor Green
+            Write-Host ($strings['SignatureValid']) -ForegroundColor Green
+            Write-Log "Digital signature: Valid" -Level Success
+            return $true
+        } else {
+            Write-Host "[!] " -NoNewline -ForegroundColor Yellow
+            Write-Host ($strings['SignatureMissing']) -ForegroundColor Yellow
+            Write-Log "Digital signature: $($signature.Status)" -Level Warning
+            return $false
+        }
+    } catch {
+        Write-Host "[!] " -NoNewline -ForegroundColor Yellow
+        Write-Host ($strings['SignatureMissing']) -ForegroundColor Yellow
+        Write-Log "Digital signature check failed: $_" -Level Warning
+        return $false
+    }
 }
 
 # --- Main ---
@@ -272,10 +327,10 @@ try {
 }
 
 Write-Host $Line -ForegroundColor Gray
-Show-Spinner ($strings['CheckingLatestVersion'])
+Write-Host ($strings['CheckingLatestVersion']) -ForegroundColor Yellow
 
 try {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $repos = @(
         @{ Owner = "Alex313031"; Repo = "Thorium-Win"; Label = "Official" },
         @{ Owner = "gz83"; Repo = "thorium"; Label = "Collaborator (Beta)" }
@@ -288,8 +343,8 @@ try {
     $cleanLocalVersion = ($localVersion -replace '[^0-9.]', '').Trim('.')
 
     foreach ($repo in $repos) {
-        $repoUrl = "https://api.github.com/repos/$($repo.Owner)/$($repo.Repo)/releases"
-        $allReleases = Invoke-RestMethod -Uri $repoUrl -UseBasicParsing -ErrorAction SilentlyContinue
+            $repoUrl = "https://api.github.com/repos/$($repo.Owner)/$($repo.Repo)/releases"
+            $allReleases = Invoke-RestMethodWithRetry -Uri $repoUrl
         if (-not $allReleases) { continue }
         foreach ($releaseEntry in $allReleases) {
             $tag = $releaseEntry.tag_name
@@ -372,7 +427,7 @@ try {
         if ($choice -match 'y|т') {
             $downloadPath = Join-Path $env:USERPROFILE "Downloads"
             $targetPath = Join-Path $downloadPath $matchingAsset.name
-            if (-not (Test-DiskSpace -Path $downloadPath -RequiredBytes ($matchingAsset.size * 2))) {
+            if (-not (Test-DiskSpace -Path $downloadPath -RequiredBytes ($matchingAsset.size * 3))) {
                 Write-Host ($strings['InsufficientDiskSpace']) -ForegroundColor Red
                 Read-Host ($strings['PressEnterToExit']); Exit
             }
@@ -391,11 +446,28 @@ try {
                 Write-Host ($strings['VerifyingIntegrity']) -ForegroundColor Gray
                 $hash = Get-FileHashSafe -FilePath $targetPath
                 if ($hash) { Write-Host ($strings['FileHash'] -f $hash.Substring(0, 16)) -ForegroundColor DarkGray }
+                Write-Host ($strings['VerifyingSignature']) -ForegroundColor Gray
+                $signatureOk = Test-FileSignature -FilePath $targetPath
+                if (-not $signatureOk) {
+                    Write-Host '[?] ' -NoNewline -ForegroundColor Yellow
+                    Write-Host ($strings['SignatureVerify']) -ForegroundColor Yellow
+                    $sigChoice = Read-Host
+                    if ($sigChoice -notmatch 'y|т') {
+                        Write-Host ($strings['UpdateSkipped']) -ForegroundColor Gray
+                        if (Test-Path $targetPath) { Remove-Item $targetPath -Force }
+                        Exit
+                    }
+                }
                 Write-Host ($strings['LaunchingInstaller']) -ForegroundColor Yellow
-                Start-Process -FilePath $targetPath -Wait
-                Write-Host ($strings['UpdateCompleted']) -ForegroundColor Green
-                [Console]::Beep(523, 150); [Console]::Beep(659, 150); [Console]::Beep(784, 300)
-                Remove-Item $targetPath -Force -ErrorAction SilentlyContinue
+                $proc = Start-Process -FilePath $targetPath -Wait -PassThru
+                if ($proc.ExitCode -ne 0) {
+                    Write-Host ($strings['InstallerFailed'] -f $proc.ExitCode) -ForegroundColor Red
+                    Write-Log "Installer exited with code $($proc.ExitCode)" -Level Error
+                } else {
+                    Write-Host ($strings['UpdateCompleted']) -ForegroundColor Green
+                    [Console]::Beep(523, 150); [Console]::Beep(659, 150); [Console]::Beep(784, 300)
+                    Remove-Item $targetPath -Force -ErrorAction SilentlyContinue
+                }
             } catch {
                 Write-Host ($strings['DownloadError'] -f $_) -ForegroundColor Red
                 if (Test-Path $targetPath) { Remove-Item $targetPath -Force }

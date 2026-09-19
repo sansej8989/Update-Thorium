@@ -1,50 +1,38 @@
 # Update-Thorium.ps1 Changelog / Зміни в Update-Thorium.ps1
 
-## Date / Дата: 21.05.2026
+## Date / Дата: 19.09.2026
 
 ---
 
 ## 🆕 LATEST: Additional Improvements / ОСТАННЄ: Додаткові покращення
 
 ### English
-**1. Administrator Rights Check**
-- Automatic detection of administrator privileges at script startup
-- Option to restart script with elevated rights
-- User can choose to continue without admin rights (with warning)
-- Prevents installation errors due to insufficient permissions
+**1. API Retry Logic**
+- 3 attempts with exponential backoff (2s, 4s) for GitHub API requests
+- Handles HTTP 403 (rate limit) and network errors gracefully
+- Detailed logging of each attempt with delay information
+- User sees attempt number and retry countdown
 
-**2. Download Progress Bar**
-- Real-time progress visualization during file download
-- Shows: progress bar, downloaded/total size, download speed, estimated time
-- Uses `System.Net.WebClient` with `DownloadProgressChanged` event
-- More informative than simple spinner animation
-
-**Implementation:**
-- `Test-Administrator` function checks privileges and offers restart
-- `Invoke-DownloadWithProgress` function replaces `Invoke-WebRequest`
-- Both functions support multilingual interface
+**2. Digital Signature Verification**
+- Checks Authenticode signature of downloaded installer before execution
+- Valid signature: green confirmation, proceeds automatically
+- Missing/invalid signature: yellow warning, asks for user confirmation
+- All signature events logged for audit trail
 
 ### Українська
-**1. Перевірка прав адміністратора**
-- Автоматичне визначення прав адміністратора при запуску скрипту
-- Можливість перезапустити скрипт з підвищеними правами
-- Користувач може продовжити без прав адміна (з попередженням)
-- Запобігає помилкам встановлення через недостатні права
+**1. Retry-логіка для API**
+- 3 спроби з експоненціальною затримкою (2с, 4с) для запитів до GitHub API
+- Коректна обробка HTTP 403 (rate limit) та мережевих помилок
+- Детальне логування кожної спроби з інформацією про затримку
+- Користувач бачить номер спроби та зворотний відлік
 
-**2. Прогрес-бар завантаження**
-- Візуалізація прогресу в реальному часі під час завантаження файлу
-- Показує: прогрес-бар, завантажено/загалом, швидкість, час до завершення
-- Використовує `System.Net.WebClient` з подією `DownloadProgressChanged`
-- Більш інформативно ніж проста анімація спінера
-
-**Реалізація:**
-- Функція `Test-Administrator` перевіряє права та пропонує перезапуск
-- Функція `Invoke-DownloadWithProgress` замінює `Invoke-WebRequest`
-- Обидві функції підтримують мультимовний інтерфейс
+**2. Перевірка цифрового підпису**
+- Перевірка Authenticode підпису завантаженого інсталятора перед запуском
+- Дійсний підпис: підтвердження зеленим, автоматичний продовження
+- Відсутній/недійсний підпис: жовте попередження, запит підтвердження
+- Усі події підпису логуються для аудиту
 
 ---
-
-## 🌐 Multilingual Support / Мультимовна підтримка
 
 ### English
 **Automatic Language Detection**
@@ -81,16 +69,16 @@
 ### English
 1. **Version Comparison (CRITICAL)**
    - **Before:** String comparison `$cleanLocalVersion -ge $latestVersion`
-   - **After:** Numeric comparison via `[System.Version]::Parse()` with fallback
-   - **Problem:** Version "120.0.0" was considered less than "99.0.0"
-   - **Solution:** `Compare-Versions` function with proper version parsing
+   - **After:** Regex-based numeric component comparison via `Compare-Versions`
+   - **Problem:** Version "120.0.0" was considered less than "99.0.0"; letter prefixes (e.g., "M150") caused parse failures
+   - **Solution:** `Compare-Versions` extracts all numeric components via regex and compares them sequentially (handles `M150`, `v123.0.1`, etc.)
 
 ### Українська
 1. **Порівняння версій (КРИТИЧНО)**
    - **Було:** Рядкове порівняння `$cleanLocalVersion -ge $latestVersion`
-   - **Стало:** Числове порівняння через `[System.Version]::Parse()` з fallback
-   - **Проблема:** Версія "120.0.0" вважалася меншою за "99.0.0"
-   - **Рішення:** Функція `Compare-Versions` з правильним парсингом версій
+   - **Стало:** Регулярне порівняння числових компонентів через `Compare-Versions`
+   - **Проблема:** Версія "120.0.0" вважалася меншою за "99.0.0"; буквені префікси (напр. "M150") викликали помилки парсингу
+   - **Рішення:** `Compare-Versions` витягує всі числові компоненти через regex і порівнює їх послідовно (підтримує `M150`, `v123.0.1` тощо)
 
 ---
 
@@ -246,16 +234,18 @@
 - `Compare-Versions(Version1, Version2)` - version comparison
 - `Test-DiskSpace(Path, RequiredBytes)` - space check
 - `Get-FileHashSafe(FilePath, Algorithm)` - hash calculation
+- `Invoke-RestMethodWithRetry(Uri, MaxRetries)` - API requests with retry
+- `Test-FileSignature(FilePath)` - Authenticode signature verification
 
 **Improved Functions:**
 - `Get-CpuTarget()` - added error handling and logging
-- `Show-Spinner()` - extracted constants
 - `Show-Header()` - renamed from Draw-Header
+- `Invoke-DownloadWithProgress` - added curl.exe fallback
 
 **Code Size:**
 - Before: 156 lines
-- After: 438 lines
-- Added: ~282 lines (functions, error handling, logging, localization, multilingual support)
+- After: 495 lines
+- Added: ~339 lines (functions, error handling, logging, localization, multilingual support, retry logic, signature verification)
 
 ### Українська
 **Додані функції:**
@@ -266,40 +256,32 @@
 
 **Покращені функції:**
 - `Get-CpuTarget()` - додано обробку помилок та логування
-- `Show-Spinner()` - винесено константи
 - `Show-Header()` - перейменовано з Draw-Header
 
 **Розмір змін:**
 - Було: 156 рядків
-- Стало: 438 рядків
-- Додано: ~282 рядки (функції, обробка помилок, логування, локалізація, мультимовність)
+- Стало: 495 рядків
+- Додано: ~339 рядків (функції, обробка помилок, логування, локалізація, мультимовність, retry-логіка, перевірка підпису)
 
 ---
 
 ## 🎯 Future Improvements / Можливі майбутні покращення
 
 ### English
-- Digital signature verification of installer
 - System restore point creation
 - Manual version selection (SSE4.1 instead of AVX2)
 - Silent mode
-- Download progress bar
-- Administrator rights check
 
 ### Українська
-- Перевірка цифрового підпису інсталятора
 - Створення точки відновлення системи
 - Вибір версії вручну (SSE4.1 замість AVX2)
 - Тихий режим (silent mode)
-- Прогрес-бар завантаження
-- Перевірка прав адміністратора
 
 ---
 
 ## 📦 Files / Файли
 
-- `Update-Thorium.ps1` - updated script (438 lines) / оновлений скрипт (438 рядків)
-- `Update-Thorium.ps1.backup` - backup of original / резервна копія оригіналу
+- `Update-Thorium.ps1` - updated script (495 lines) / оновлений скрипт (495 рядків)
 - `CHANGELOG-Update-Thorium.md` - detailed change documentation / детальна документація змін
 
 ---
@@ -331,6 +313,38 @@ The script now:
 - ✅ **Підтримує українську та англійську мови**
 - ✅ **Автоматично визначає мову системи**
 - ✅ Коректно обробляє відсутність Windows релізів
+
+---
+
+## 🚀 CI/CD & Testing / CI/CD та тестування
+
+### English
+**Pester Test Suite**
+- Comprehensive test suite located in `tests/Update-Thorium.Tests.ps1`
+- 39 tests across 5 core functions
+- Uses Pester v5+ framework
+- Covers: version comparison, CPU detection, disk space, API retry, signature verification
+
+**GitHub Actions CI Pipeline**
+- Automatic trigger on `push` and `pull_request` to `main`/`master`
+- Step 1: PowerShell syntax validation via AST parser
+- Step 2: Pester module installation
+- Step 3: Full test suite execution with detailed output
+- Pipeline fails if any test fails
+
+### Українська
+**Набір тестів Pester**
+- Комплексний набір тестів у `tests/Update-Thorium.Tests.ps1`
+- 39 тестів для 5 основних функцій
+- Використовує фреймворк Pester v5+
+- Покриває: порівняння версій, визначення CPU, дисковий простір, retry API, перевірку підпису
+
+**CI/CD пайплайн GitHub Actions**
+- Автоматичний запуск при `push` та `pull_request` в `main`/`master`
+- Крок 1: Перевірка синтаксису PowerShell через AST парсер
+- Крок 2: Встановлення модуля Pester
+- Крок 3: Запуск повного набору тестів з детальним виводом
+- Пайплайн завершується помилкою, якщо хоча б один тест не пройшов
 
 ---
 
