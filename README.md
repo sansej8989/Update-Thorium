@@ -2,7 +2,7 @@
 
 **Automatic updater for [Thorium Browser](https://thorium.rocks/) on Windows.**
 
-> 🇺🇦 [Українська версія нижче](#-update-thorium-1)
+> 🇺🇦 [Українська версія нижче](#-update-thorium-українська)
 
 ---
 
@@ -30,15 +30,18 @@
 ## 🚀 Quick Start
 
 ### Option 1: Run directly
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File Update-Thorium.ps1
 ```
 
 ### Option 2: Right-click
+
 1. Right-click `Update-Thorium.ps1`
 2. Select **"Run with PowerShell"**
 
 ### Option 3: From PowerShell
+
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\Update-Thorium.ps1
@@ -56,7 +59,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ## 📁 Project Structure
 
-```
+```text
 Update-Thorium/
 ├── .github/
 │   └── workflows/
@@ -73,8 +76,9 @@ Update-Thorium/
 The script auto-detects everything. No configuration needed.
 
 **CPU detection logic:**
+
 | CPU Type | Build Selected |
-|----------|---------------|
+| --- | --- |
 | Intel Core i3/i5/i7/i9, AMD Ryzen, AMD Athlon Silver/Gold | AVX2 (Modern) |
 | Intel Celeron/Pentium, AMD Athlon (Older) | SSE4.1 / AVX |
 | Other | Default (mini_installer) |
@@ -110,13 +114,14 @@ Invoke-Pester -Path ./tests/Update-Thorium.Tests.ps1
 ### CI/CD Pipeline
 
 Automated tests run on every `push` and `pull_request` to `main`/`master` via GitHub Actions:
+
 - **Syntax check** — validates all `.ps1` files using PowerShell AST parser
 - **Pester tests** — runs the full test suite covering `Compare-Versions`, `Get-CpuTarget`, `Test-DiskSpace`, `Invoke-RestMethodWithRetry`, `Test-FileSignature`
 
 ### Test Coverage
 
 | Function | Tests | Cases |
-|---|---|---|
+| --- | --- | --- |
 | `Compare-Versions` | 16 | Standard, letter prefixes (M150), v-prefix, equal, complex tags, edge cases |
 | `Get-CpuTarget` | 8 | Intel i7/i9, AMD Ryzen, Celeron, Pentium, Athlon, unknown, error |
 | `Test-DiskSpace` | 4 | Enough space, insufficient, exact boundary, error handling |
@@ -131,11 +136,11 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 ---
 
-# 🔄 Update-Thorium
+## 🔄 Update-Thorium (Українська)
 
 **Автоматичний оновлювач для [Thorium Browser](https://thorium.rocks/) на Windows.**
 
-## ✨ Можливості
+### ✨ Можливості
 
 - 🔍 **Автовизначення архітектури CPU** — обирає оптимальну збірку (AVX2, SSE4.1 або стандартну)
 - 📊 **Надійне порівняння версій** — обробка складних тегів (напр. 'M150') через розширений парсинг
@@ -148,30 +153,33 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - 💾 **Перевірка вільного місця** — попередження перед завантаженням
 - 🧹 **Автоочищення** — видалення інсталятора після успішного оновлення
 
-## 📋 Вимоги
+### 📋 Вимоги
 
 - **ОС:** Windows 10 / 11
 - **PowerShell:** 5.1+
 - **Thorium Browser** встановлений (перевіряє `%LOCALAPPDATA%\Thorium` та `%ProgramFiles%\Thorium`)
 
-## 🚀 Швидкий старт
+### 🚀 Швидкий старт
 
-### Варіант 1: Запуск напряму
+#### Варіант 1: Запуск напряму
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File Update-Thorium.ps1
 ```
 
-### Варіант 2: Правий клік
+#### Варіант 2: Правий клік
+
 1. Правий клік на `Update-Thorium.ps1`
 2. Оберіть **"Виконати за допомогою PowerShell"**
 
-### Варіант 3: З PowerShell
+#### Варіант 3: З PowerShell
+
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\Update-Thorium.ps1
 ```
 
-## 📖 Як це працює
+### 📖 Як це працює
 
 1. **Визначає** тип процесора та обирає найкращу збірку Thorium
 2. **Знаходить** встановлену версію Thorium
@@ -181,6 +189,6 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 6. **Перевіряє** цілісність файлу (SHA256)
 7. **Запускає** інсталятор та прибирає після завершення
 
-## 📄 Ліцензія
+### 📄 Ліцензія
 
 Цей проект ліцензований під MIT License — див. файл [LICENSE](LICENSE).
